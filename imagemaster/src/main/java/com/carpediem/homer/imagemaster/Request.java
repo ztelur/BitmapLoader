@@ -15,6 +15,9 @@ public class Request {
     private WeakReference<Context> mContextRef;
     private RequestHandler mHandler;
 
+    //图片信息
+    private int mOutWidth;
+    private int mOutHeight;
     public Request(@NonNull  String url, @NonNull  View view, @NonNull Context context) {
         mUrl = url;
         mContainer = view;
@@ -52,4 +55,6 @@ public class Request {
     public void setmContextRef(WeakReference<Context> mContextRef) {
         this.mContextRef = mContextRef;
     }
+
+
 }
