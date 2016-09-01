@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import okio.Okio;
 
@@ -21,6 +23,8 @@ public class DiskLruCache {
     private static final String DIRTY = "dirty";
     private static final String REMOVE = "remove";
     private static final String READ = "read";
+
+    private ReentrantReadWriteLock lock;
 
     /**
      *
@@ -42,19 +46,26 @@ public class DiskLruCache {
         this.appVersion = appVersion;
         this.valueCount = valueCount;
         this.maxSize = maxSize;
+        this.lock = new ReentrantReadWriteLock(true);
         //这里的话，可能本来就存在journal了
-        initJournal(journal);
+        checkJournal(journal);
     }
 
     private void checkJournal(File journal) {
         if (!journal.exists()) {
-            initJournal(journal);
+            try {
+                journal.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        initJournal(journal);
 
     }
     private void initJournal(File journal) {
         assert journal.exists();
         try {
+            lock.writeLock().lock();
             FileOutputStream os = new FileOutputStream(journal);
             byte[] bytes = (JOURNAL_FILE + "\n").getBytes();
             os.write(bytes);
@@ -71,6 +82,8 @@ public class DiskLruCache {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -108,8 +121,32 @@ public class DiskLruCache {
         return false;
     }
 
+    /**
+     * 支持多线程读写锁
+     */
     private class Editor {
+        private String key;
 
+        public Editor(String key) {
+            this.key = key;
+            //在创建时就要向journal中写入dirty data,需要锁操作,其实就使用journal的File对象就行了。
+
+            writeJournal();
+        }
+        private void writeJournal() {
+
+        }
+
+        public OutputStream newOutStream() {
+
+        }
+
+        public void commit() {
+
+        }
+        public void abort() {
+
+        }
     }
 
     private class Snapshot {
