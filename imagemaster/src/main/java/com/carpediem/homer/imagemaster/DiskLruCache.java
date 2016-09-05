@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -173,7 +174,15 @@ public class DiskLruCache {
     }
 
     private class Snapshot {
+        private String key;
+        public Snapshot(String key) throws IOException{
+            this.key = key;
+            writeJournal(createReadLog(key));
+        }
 
+        public InputStream getInputStream() throws IOException{
+            return new FileInputStream(getDirtyFile(key));
+        }
     }
 
     private String createDirtyLog(String key) {
@@ -184,6 +193,10 @@ public class DiskLruCache {
     }
     private String createRemoveLog(String key) {
         return (REMOVE + " " + key + "\n");
+    }
+
+    private String createReadLog(String key) {
+        return (READ + key);
     }
 
     private File getDirtyFile(String key) {
