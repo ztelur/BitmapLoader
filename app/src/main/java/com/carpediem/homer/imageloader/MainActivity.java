@@ -44,11 +44,13 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v) {
 //                    useMatric();
 //                    clipBitmap();
-                    circleCornerBitmap();
+//                    circleCornerBitmap();
+                    useInBitmap();
                 }
             });
         }
-        startActivity(new Intent(this,IOActivity.class));
+
+//        startActivity(new Intent(this,BlogActivity.class));
     }
     private void circleCornerBitmap() {
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -167,5 +169,25 @@ public class MainActivity extends AppCompatActivity {
 
     public File getDiskCacheDir(Context context, String uniqueName) {
         return null;
+    }
+
+    private void useInBitmap() {
+        Bitmap bm = BitmapFactory.decodeResource(getResources(),R.drawable.back);
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inBitmap = bm;
+
+        Bitmap bm2 = BitmapFactory.decodeResource(getResources(),R.drawable.back,options);
+        if (bm2 == bm) {
+            Log.e("test","equals");
+        } else {
+            Log.e("test","not equals");
+        }
+        mImageView.setImageBitmap(bm2);
+
+    }
+
+    private void usePalette() {
+
     }
 }

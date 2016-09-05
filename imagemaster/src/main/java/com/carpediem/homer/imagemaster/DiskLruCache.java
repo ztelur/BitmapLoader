@@ -121,35 +121,75 @@ public class DiskLruCache {
         return false;
     }
 
+    private void writeJournal(String log) throws IOException{
+        lock.writeLock().tryLock();
+        FileOutputStream os = null;
+        try {
+            os = new FileOutputStream(journal);
+            os.write(log.getBytes());
+            os.flush();
+            os.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (os != null) {
+                os.close();
+            }
+        }
+    }
+
     /**
      * 支持多线程读写锁
      */
     private class Editor {
         private String key;
-
-        public Editor(String key) {
+        private File tmp;
+        public Editor(String key) throws IOException{
             this.key = key;
             //在创建时就要向journal中写入dirty data,需要锁操作,其实就使用journal的File对象就行了。
 
-            writeJournal();
+            writeJournal(createDirtyLog(key));
         }
-        private void writeJournal() {
-
-        }
-
-        public OutputStream newOutStream() {
-
+        public OutputStream newOutStream() throws FileNotFoundException{
+            tmp = getDirtyFile(key);
+            return new FileOutputStream(tmp);
         }
 
-        public void commit() {
-
+        //commit时要把clean数据写入,并且把tmp转换为bak
+        public void commit() throws IOException{
+            if (tmp == null) {
+                throw new RuntimeException("call commit before newOutStream");
+            }
+            long fileSize = tmp.length();
+            writeJournal(createCleanLog(key,fileSize));
+            //不处理tmp
         }
-        public void abort() {
-
+        public void abort() throws IOException{
+            if (tmp == null) {
+                throw new RuntimeException("call abort before newOutStream");
+            }
+            writeJournal(createRemoveLog(key));
         }
     }
 
     private class Snapshot {
 
     }
+
+    private String createDirtyLog(String key) {
+        return (DIRTY + " " + key + "\n");
+    }
+    private String createCleanLog(String key, long size) {
+        return (CLEAN + " " + key + " " + size + "\n");
+    }
+    private String createRemoveLog(String key) {
+        return (REMOVE + " " + key + "\n");
+    }
+
+    private File getDirtyFile(String key) {
+        File file = new File(directory,key + ".tmp");
+        return file;
+    }
+
+
 }
