@@ -111,15 +111,17 @@ public class DiskLruCache {
         return new DiskLruCache(directory,appVersion,valueCount,maxSize);
     }
     public Editor edit(String key) throws IOException {
-        return null;
+        return new Editor(key);
     }
 
     public synchronized Snapshot get(String key) throws IOException {
-        return null;
+        return new Snapshot(key);
     }
 
     public synchronized boolean remove(String key) throws IOException {
-        return false;
+        writeJournal(createReadLog(key));
+        getDirtyFile(key).delete();
+        return true;
     }
 
     private void writeJournal(String log) throws IOException{
